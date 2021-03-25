@@ -21,7 +21,6 @@ The goals / steps of this project are the following:
 [image4]: ./writeup_images/test_sign_frequency.png "test freq"
 [image5]: ./writeup_images/valid_sign_frequency.png "valid freq"
 [image6]: ./writeup_images/preprocessed_image.PNG "preprocess"
-[image7]: ./writeup_images/prep_train_sign_frequency.png "resampled distribution"
 [image8]: ./writeup_images/web_images.PNG "New Images"
 
 ## Rubric Points
@@ -64,28 +63,22 @@ Below is the preprocessing that I have done on the images.
 2. I converted the image to greyscale as it will reduce no. of features and thus increasing the execution time. Also, most of the images in the dataset is darker.
 
 ```python
-def preprocess_image(images):
-    output_shape = (32, 32, 1)
-    output = np.empty(shape=(len(images),) + output_shape, dtype=int)
-    for index in range(0, len(images)):
-        # normalized image
-        norma_image = cv2.normalize(images[index], np.zeros(image_shape[0:2]), 0, 255, cv2.NORM_MINMAX)
-        # grayscale image
-        gray_image = cv2.cvtColor(norma_image, cv2.COLOR_RGB2GRAY)
-        #reshaping output set
-        output[index] = np.reshape(gray_image, output_shape)
-    return output
+def normalize(image):
+    return cv2.normalize(image, np.zeros(image_shape[0:2]), 0, 255, cv2.NORM_MINMAX)
+def rgb_to_grey(image):
+    return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+def preprocess_image(images): 
+    prep_shape = (32, 32, 1)
+    prep = np.empty(shape=(len(images),) + prep_shape, dtype=int)
+    for i in range(0, len(images)):
+        normalized = normalize(images[i])
+        gray_image = rgb_to_grey(normalized)
+        prep[i] = np.reshape(gray_image, prep_shape)
+    return prep
 ```
 The comparison between the images before and after preprocessing
 
 ![alt text][image6]
-
-I decided to generate additional data because there was an imbalance in data for each class. So I recreate/resamples the training data in such a way that each class has an equal no. of samples.I have also shuffled the training dataset to avoid any bias. 
-
-Below is the distribution of labels in training data after resampling.
-
-![alt text][image7]
-
 
 
 #### 2. Final model architecture
@@ -116,8 +109,8 @@ The model architecture is based on the LeNet model architecture. I added dropout
 To train the model, I used an Adam optimizer and the following hyperparameters:
 
 learning rate: 0.001
-number of epochs: 50
-batch size: 128
+number of epochs: 40
+batch size: 64
 mu = 0.0 and sigma = 0.1
 keep probalbility of the dropout layer: 0.7
 
@@ -129,11 +122,20 @@ keep probalbility of the dropout layer: 0.7
 
 3. Later I increased the epochs to 50, and also added dropout layers with keep probability 0.5 after every fully connected layers to avoid this overfitting of data. Here I got 96% training accuracy while validation accuracy was 90.6%.
 
-4. To further tweek the model,I made the convolution layers deeper and increased the size of fully connected layer. I also changed keep probability to 0.7. After which I got the below results:
-
-* Train Accuracy = 0.997
-* Validation Accuracy = 0.951
-* Test Accuracy = 0.932
+4. For above LeNet architecture with dropout with batch size 128 and epochs 50 and keep probability to 0.7, the results obtained are:
+    -Train Accuracy = 98.6%
+    -Validation Accuracy = 91.8%
+    -Test Accuracy = 90.3%
+    
+5. To further tweek the model,I made the convolution layers deeper and increased the size of fully connected layer. After which I got the below results:
+  -Validation Accuracy = 93.2
+  -Test Accuracy = 92.3
+  
+6. Later I reduced batch size to 64 and epochs to 40, after which I got below results:
+   -Train Accuracy = 99.3%
+   -Validation Accuracy = 94.3%
+   -Test Accuracy = 92.7%
+The maximum validation accuracy obtained was 95.2%
 
 
 ### Test a Model on New Images
@@ -150,17 +152,32 @@ The "general caution" sign might be difficult to classify because the triangular
 
 Here are the results of the prediction:
 
-| PREDICTED                                   |     ACTUAL		        					| 
-|:-------------------------------------------:|:-------------------------------------------:|
-| 18             General caution              | 18             General caution              |
-| 38                Keep right                | 38                Keep right                |
-| 13                  Yield                   | 13                  Yield                   |
-| 14                   Stop                   | 14                   Stop                   |
-| 34             Turn left ahead              | 34             Turn left ahead              |
+Predicted:
+18 : General caution
+Actual:
+18 : General caution
 
+Predicted:
+38 : Keep right
+Actual:
+38 : Keep right
 
+Predicted:
+13 : Yield
+Actual:
+13 : Yield
 
-The model was able to correctly guess 5 of the 5 traffic signs, which gives an accuracy of 100%. This compares favorably to the accuracy on the test set of 93.2%
+Predicted:
+14 : Stop
+Actual:
+14 : Stop
+
+Predicted:
+34 : Turn left ahead
+Actual:
+34 : Turn left ahead
+
+The model was able to correctly guess 5 of the 5 traffic signs, which gives an accuracy of 100%. This compares favorably to the accuracy on the test set of 92.7% and validation set 95.2%
 
 #### 3. Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability. 
 
@@ -168,45 +185,45 @@ The code for making predictions on my final model is located in the 26th cell of
 
 Below is the top 5 softmax probabilities of the predictions on the new images:
 
-Image: Testing_images/general_caution.jpg
-Probabilities:
-   1.000000 : 18 - General caution
-   0.000000 : 0 - Speed limit (20km/h)
-   0.000000 : 1 - Speed limit (30km/h)
-   0.000000 : 2 - Speed limit (50km/h)
-   0.000000 : 3 - Speed limit (60km/h)
+-Image: Testing_images/general_caution.jpg
+   -Probabilities:
+    - 1.000000 : 18 - General caution
+    - 0.000000 : 0 - Speed limit (20km/h)
+    - 0.000000 : 1 - Speed limit (30km/h)
+    - 0.000000 : 2 - Speed limit (50km/h)
+    - 0.000000 : 3 - Speed limit (60km/h)
 
-Image: Testing_images/keep_right.jpg
-Probabilities:
-   1.000000 : 38 - Keep right
-   0.000000 : 0 - Speed limit (20km/h)
-   0.000000 : 1 - Speed limit (30km/h)
-   0.000000 : 2 - Speed limit (50km/h)
-   0.000000 : 3 - Speed limit (60km/h)
+-Image: Testing_images/keep_right.jpg
+  -Probabilities:
+   - 1.000000 : 38 - Keep right
+   - 0.000000 : 0 - Speed limit (20km/h)
+   - 0.000000 : 1 - Speed limit (30km/h)
+   - 0.000000 : 2 - Speed limit (50km/h)
+   - 0.000000 : 3 - Speed limit (60km/h)
 
-Image: Testing_images/yield.jpg
-Probabilities:
-   1.000000 : 13 - Yield
-   0.000000 : 0 - Speed limit (20km/h)
-   0.000000 : 1 - Speed limit (30km/h)
-   0.000000 : 2 - Speed limit (50km/h)
-   0.000000 : 3 - Speed limit (60km/h)
+-Image: Testing_images/yield.jpg
+  -Probabilities:
+   - 1.000000 : 13 - Yield
+   - 0.000000 : 0 - Speed limit (20km/h)
+   - 0.000000 : 1 - Speed limit (30km/h)
+   - 0.000000 : 2 - Speed limit (50km/h)
+   - 0.000000 : 3 - Speed limit (60km/h)
 
-Image: Testing_images/stop.jpg
-Probabilities:
-   0.997981 : 14 - Stop
-   0.002019 : 37 - Go straight or left
-   0.000000 : 39 - Keep left
-   0.000000 : 33 - Turn right ahead
-   0.000000 : 19 - Dangerous curve to the left
+-Image: Testing_images/stop.jpg
+  -Probabilities:
+   - 0.997981 : 14 - Stop
+   - 0.002019 : 37 - Go straight or left
+   - 0.000000 : 39 - Keep left
+   - 0.000000 : 33 - Turn right ahead
+   - 0.000000 : 19 - Dangerous curve to the left
 
-Image: Testing_images/turn_left_ahead.jpg
-Probabilities:
-   1.000000 : 34 - Turn left ahead
-   0.000000 : 0 - Speed limit (20km/h)
-   0.000000 : 1 - Speed limit (30km/h)
-   0.000000 : 2 - Speed limit (50km/h)
-   0.000000 : 3 - Speed limit (60km/h)
+-Image: Testing_images/turn_left_ahead.jpg
+  -Probabilities:
+   - 1.000000 : 34 - Turn left ahead
+   - 0.000000 : 0 - Speed limit (20km/h)
+   - 0.000000 : 1 - Speed limit (30km/h)
+   - 0.000000 : 2 - Speed limit (50km/h)
+   - 0.000000 : 3 - Speed limit (60km/h)
 
 
 ### (Optional) Visualizing the Neural Network (See Step 4 of the Ipython notebook for more details)
